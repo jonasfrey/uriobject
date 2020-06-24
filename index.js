@@ -8,8 +8,20 @@ import {
 from './IsDependingOn.js';
 */
 
-class uriparts {
+class uriobject {
     constructor(string) {
+      /**
+       * naming
+       * 
+       * scheme(): http, https, ftp, mailto, file, data, irc
+       * userinfo(): username:password@
+       * host(): subone.subtwo.subanother.domain.com
+       * port(): 8080
+       * path():  /index.html or /path/to/folder or /path/to/file
+       * query(): asdf=1&b=c
+       * fragment(): #some_tag_anchor
+       * 
+       */
       //string examples
       //uri schemes  https://en.wikipedia.org/wiki/List_of_URI_schemes
       /**
@@ -60,9 +72,152 @@ class uriparts {
        * or 
        * '/var/www/node/thats.my.file'
        */
-      this.get(string);
+
+       //aliases
+       this.alias_table = {
+       
+        'protocol':'scheme',
+        'user_pass':'userinfo',
+        'domain':'host',
+        'portnumber':'port',
+        'pathfile':'path',
+        'requestquery':'query',
+        'anchortag':'fragment',
+
+      };
+
+      this.set_properties(string);
+      return new Proxy(this, 
+        {
+          get: function(obj, name){
+            //console.log("proxy get", obj, name);
+            if(name == 'uri'){
+              var uri = '';
+              if(obj.scheme != null){
+                uri += obj.scheme + "://";
+              }
+              if(obj.userinfo != null){
+                uri += obj.userinfo + "@";
+              }
+              if(obj.host != null){
+                uri += obj.host;
+              }
+              if(obj.port != null){
+                uri += ":" + obj.port;
+              }
+              if(obj.path != null){
+                uri += obj.path;
+              }
+              if(obj.query != null){
+                uri += "?" + obj.query;
+              }
+              if(obj.fragment != null){
+                uri += "#" + obj.fragment;
+              }
+              return uri;
+            }
+            var alias = obj.alias_table[name];
+            if(alias != undefined){
+              return obj[alias];
+            }
+            return obj[name];
+          },
+          set: function(obj, name, value){
+            
+            
+            var new_name = name;
+            var alias = obj.alias_table[name];
+            if(alias != undefined){
+              var new_name = alias;
+            }
+            var regexes = {
+              'scheme': '(http|https|ftp|mailto|file|data|irc)',
+              'userinfo': '.*:.*',
+              'host': '.*',
+              'port': '^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$',
+              'path': '.*',
+              'query': '.*',
+              'fragment': '.*',
+            };
+            var regex = regexes[new_name];
+            if(regex != undefined && value != null){
+              var match = value.toString().match(new RegExp(regex));
+
+              if(match == null){
+                console.error("cannot set the property '"+new_name + '\''+ ((new_name != name) ? " (alias) '"+ name +"'": '') + ": the value '"+ value +"' does not match the regex " + regex)
+                return false;
+              }
+            }
+            return obj[new_name] = value;
+            
+          }
+        })
+      
     }
   
+    usage_example(){
+      return `
+      this documentation is written in [markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
+      ![https://en.wikipedia.org/wiki/URL#/media/File:URI_syntax_diagram.svg](https://en.wikipedia.org/wiki/URL#/media/File:URI_syntax_diagram.svg) 
+      # create new instance
+      \`\`\`javascript
+      var uripartsobject = new uriobject('http://you:pass@ex.com/path/file?query=string#tag');
+      \`\`\`
+      
+      # access get data 
+      empty data will be null
+      \`\`\`javascript
+      console.log(uripartsobject.scheme);//returns 'http'
+      /**
+       * uripartsobject
+       * {
+       *  'scheme': 'http',
+       *  'userinfo': 'you:pass',
+       *  'host': 'ex.com',
+       *  'port': null,
+       *  'path': '/path/file',
+       *  'query': '?query=sttring',
+       *  'fragment': 'tag',
+       *  'uri': 'http://you:pass@ex.com/path/file?query=string#tag',
+       * ...
+       * }
+       * /
+      \`\`\`
+
+      # access set data 
+      empty data will be null
+      \`\`\`javascript
+      uripartsobject.scheme = 'https';
+      //you can set data to null
+      uripartsobject.userinfo = null;
+      \`\`\`
+
+      # access get data after set data 
+      empty data will be null
+      \`\`\`javascript
+      /**
+       * uripartsobject
+       * {
+       *  'scheme': 'https',
+       *  'userinfo': null,
+       *  'host': 'ex.com',
+       *  'port': null,
+       *  'path': '/path/file',
+       *  'query': '?query=sttring',
+       *  'fragment': 'tag',
+       *  'uri': 'https://@ex.com/path/file?query=string#tag',
+       * ...
+       * }
+       * /
+      \`\`\`
+
+      uripartsobject.scheme = https; 
+      uripartsobject.userinfo = null; 
+      console.log(uripartsobject.uri);//returns https://ex.com/path/file?query=string#tag
+      \`\`\`
+
+      `;
+    }
     /*
     get_testurls() {
         return [
@@ -160,147 +315,16 @@ class uriparts {
     }
     */
   
-    get_instance(objectorstring) {
-      if (typeof objectorstring == "string") {
-        objectorstring = this.get(objectorstring);
-      }
-      return objectorstring;
-    }
-  
-    /**
-     * returns the concatinated strings of whats available on this
-     * there can be properties which are not set such as 
-     * protocol, user_pass, port, file_name and or query_string
-     * @return string
-     */
-    protocol_user_pass_domain_port_path_query_string() {
-  
-      var seps = this.get_seps();
-  
-      var protocol_user_pass_domain_port_path_query_string = '';
-  
-      protocol_user_pass_domain_port_path_query_string =
-        ((this.protocol == null) ? '' : this.protocol + seps.protocol) +
-        ((this.user_pass == null) ? '' : this.user_pass + seps.user_pass) +
-        ((this.domain == null) ? '' : this.domain) +
-        ((this.port == null) ? '' : seps.port + this.port.toString()) +
-        ((this.path == null) ? '' : this.path) +
-        ((this.file_name == null) ? '' : this.file_name) +
-        ((this.query_string == null) ? '' : seps.query_string + this.query_string);
-  
-      return (protocol_user_pass_domain_port_path_query_string == '') ? null : protocol_user_pass_domain_port_path_query_string;
-    }
-  
-  
-    /**
-     * alias
-     * @return functioncall
-     */
-    full() {
-      return this.protocol_user_pass_domain_port_path_query_string();
-    }
-    /**
-     * returns a full url with protocol domain and path even if something is missing
-     * @return string
-     */
-    href() {
-      var href = "";
-      var seps = this.get_seps();
-      var protocol = this.protocol;
-      if (this.protocol == null) {
-        protocol = "http";
-      }
-      href += protocol + seps.protocol;
-  
-      var user_pass = this.user_pass;
-      var user_pass_sep = seps.user_pass;
-      if (this.user_pass == null) {
-        user_pass = "";
-        user_pass_sep = "";
-      }
-      href += user_pass + user_pass_sep;
-  
-      var domain = this.domain;
-      href += domain;
-  
-  
-      var port = this.port;
-      var port_sep = seps.port;
-      if (this.user_pass == null) {
-        port = "";
-        port_sep = "";
-      }
-      href += port_sep + port;
-  
-  
-      var path = this.path;
-      href += path;
-  
-  
-      var file_name = this.file_name;
-      if (this.file_name == null) {
-        file_name = "";
-      }
-      href += file_name;
-  
-  
-      var query_string = this.query_string;
-      var query_string_sep = seps.query_string;
-      if (this.query_string == null) {
-        query_string = "";
-        query_string_sep = "";
-      }
-      href += query_string_sep + query_string;
-  
-      return href;
-    }
-  
-    /**
-     * @return string
-     */
-    path_file_name() {
-  
-      var seps = this.get_seps();
-  
-      var path_file_name = '';
-  
-      if (this.path != null) {
-        path_file_name += this.path;
-      }
-  
-      if (this.file_name != null) {
-        path_file_name += this.file_name;
-      }
-  
-      return (path_file_name == '') ? null : path_file_name;
-  
-    }
-  
-    /**
-     * @return string
-     */
-    path_file_name_query_string() {
-  
-      var seps = this.get_seps();
-  
-      var path_file_name_query_string = this.path_file_name();
-  
-      if (this.query_string != null) {
-        path_file_name_query_string += seps.query_string + this.query_string;
-      }
-      return (path_file_name_query_string == '') ? null : path_file_name_query_string;
-  
-    }
-  
     /**
      * @return object
      */
     get_seps() {
       return {
-        protocol: "://",
-        user_pass: "@",
-        query_string: "?",
-        directory: "/",
+        scheme: "://",
+        userinfo: "@",
+        query: "?",
+        fragment: "#",
+        path: "/",
         port: ":",
         ipv6_closing_bracket: "]",
         file_extension: "."
@@ -311,32 +335,44 @@ class uriparts {
      * @param {string} string 
      * @return {class} class 
      */
-    get(string) {
+    set_properties(string) {
       var seps = this.get_seps();
       this.input = string;
       var tmp_string = string;
       var parts = [];
       //must be first !
-      //try to shift away query string, 
-      parts = tmp_string.split(seps.query_string)
+      //try to pop away fragment
+      parts = tmp_string.split(seps.fragment);
+      if(parts.length > 1){
+        this.fragment = parts.pop();
+      }else{
+        this.fragment = null;
+      }
+      tmp_string = parts.join(seps.tag);
+
+
+      //try to pop away query string, 
+
+
+      parts = tmp_string.split(seps.query)
   
   
   
       if (parts.length > 1) {
         tmp_string = parts.shift();
-        this.query_string = parts.join(seps.query_string);
+        this.query = parts.join(seps.query);
       } else {
         tmp_string = string;
-        this.query_string = null;
+        this.query = null;
       }
   
   
-      //try to shift away protocol
-      parts = tmp_string.split(seps.protocol);
+      //try to shift away scheme
+      parts = tmp_string.split(seps.scheme);
   
-      this.protocol = (parts.length > 1) ? parts.shift() : null;
+      this.scheme = (parts.length > 1) ? parts.shift() : null;
   
-      tmp_string = parts.join(seps.protocol);
+      tmp_string = parts.join(seps.scheme);
   
   
   
@@ -348,93 +384,73 @@ class uriparts {
       */
   
       //try to shift away domain 
-      parts = tmp_string.split(seps.directory);
+      parts = tmp_string.split(seps.path);
   
       //if './file.could.be.exe' parts == ['.', 'file.could.be.exe']
       //if '/var/absolutepath/file.could.be.exe' parts == ['','var', 'absolutepath', 'file.could.be.exe']
   
       if (parts[0].indexOf('.') == 0 || parts[0] == '.' || parts[0] == '') {
-        this.domain = null;
-        this.user_pass = null;
+        this.host = null;
+        this.userinfo = null;
         this.port = null;
       } else {
-        var domainwithuserpassport = parts.shift();
-        tmp_string = seps.directory + parts.join(seps.directory);
+        var host_userinfo_port = parts.shift();
+        tmp_string = seps.path + parts.join(seps.path);
   
-        //try to shift away user_pass
-        parts = domainwithuserpassport.split(seps.user_pass);
+        //try to shift away userinfo
+        parts = host_userinfo_port.split(seps.userinfo);
   
-        this.user_pass = (parts.length > 1) ? parts.shift() : null;
+        this.userinfo = (parts.length > 1) ? parts.shift() : null;
   
-        domainwithuserpassport = parts.join(seps.user_pass);
+        host_userinfo_port = parts.join(seps.userinfo);
   
         //try to pop away port 
         //if ipv4 port_separator == ':', 
         //if ipv6 port_separator == ':]'
-        var port_separator = (domainwithuserpassport.indexOf(seps.ipv6_closing_bracket) != -1) ? seps.ipv6_closing_bracket + seps.port : seps.port;
+        var port_separator = (host_userinfo_port.indexOf(seps.ipv6_closing_bracket) != -1) ? seps.ipv6_closing_bracket + seps.port : seps.port;
   
-        parts = domainwithuserpassport.split(port_separator);
+        parts = host_userinfo_port.split(port_separator);
   
         this.port = (parts.length > 1) ? parts.pop() : null;
   
-        this.domain = parts.join(port_separator);
+        this.host = parts.join(port_separator);
   
       }
+
+      this.path = tmp_string;
+
+      //we can not differenciate files from directories, since 
+      // 'this_is_a_dir.jpg' is a legit directory name!
+      // of 'this_is_a_jpg_file' is a legit file name
+
+      // //path is existing /asdf/asdf.ext
+      // if (parts.length > 0) {
+      //   //pop away file 
   
-      parts = tmp_string.split(seps.directory);
+      //   var file_name = parts.pop();
+      //   tmp_string = parts.join(seps.path) + seps.path;
   
-      //path is existing /asdf/asdf.ext
-      if (parts.length > 0) {
-        //pop away file 
+      //   this.file_name = file_name;
+      //   this.file_name = (this.file_name == '') ? null : this.file_name;
   
-        var file_name = parts.pop();
-        tmp_string = parts.join(seps.directory) + seps.directory;
+      //   /*
+      //   parts = tmp_string.split(seps.path);
+      //   parts = parts.filter(Boolean);
+      //   tmp_string = parts.join(seps.path);
+      //   */
+      //   if (tmp_string == "") {
+      //     tmp_string = "/";
+      //   }
   
-        this.file_name = file_name;
-        this.file_name = (this.file_name == '') ? null : this.file_name;
+      //   this.path = tmp_string;
   
-        /*
-        parts = tmp_string.split(seps.directory);
-        parts = parts.filter(Boolean);
-        tmp_string = parts.join(seps.directory);
-        */
-        if (tmp_string == "") {
-          tmp_string = "/";
-        }
-  
-        this.path = tmp_string;
-  
-      }
-  
-      return this;
+      // }
   
     }
-  
-    /**
-     * @return {string} 
-     */
-    file_extension() {
-      if (this.file_name == null) {
-        return null;
-      }
-      var seps = this.get_seps();
-      var parts = this.file_name.split(seps.file_extension);
-      return (parts.length > 1) ? parts[parts.length - 1] : null;
-    }
-  
-    /**
-     * function for tests
-     */
-    test() {
-      var tests = this.get_testurls();
-      for (var key in tests) {
-        console.log(new this.constructor(tests[key]));
-      }
-    }
-  
+
   
   
   }
   export {
-    UrlParts
+    uriobject
   }
