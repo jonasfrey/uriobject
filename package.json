@@ -1,7 +1,7 @@
 {
   "name": "uriobject",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "gets you the scheme (http/ftp...) userinfo (user:pass) @ host (domain.com) : port (8080) path (/some/folder/or/file) ? query (asdf=asdf&b=b) # fragment (#anchor_tag)",
   "main": "index.js",
   "scripts": {
@@ -21,5 +21,5 @@
   ],
   "author": "jonas frey",
   "license": "ISC",
-"homepage": "https://github.com/jonasfrey/uriobject"
+  "homepage": "https://github.com/jonasfrey/uriobject"
 }
