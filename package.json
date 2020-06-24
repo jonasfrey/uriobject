@@ -1,5 +1,5 @@
 {
-  "name": "UrlParts",
+  "name": "uriobject",
   "type": "module",
   "version": "1.0.0",
   "description": "gets you the scheme (http/ftp...) userinfo (user:pass) @ host (domain.com) : port (8080) path (/some/folder/or/file) ? query (asdf=asdf&b=b) # fragment (#anchor_tag)",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jonasfrey/UrlParts.git"
+    "url": "https://github.com/jonasfrey/uriobject.git"
   },
   "keywords": [
     "url",
