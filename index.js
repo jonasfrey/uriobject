@@ -8,7 +8,7 @@ import {
 from './IsDependingOn.js';
 */
 
-class UrlParts {
+class uriparts {
     constructor(string) {
       //string examples
       //uri schemes  https://en.wikipedia.org/wiki/List_of_URI_schemes
